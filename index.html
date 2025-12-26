@@ -476,24 +476,27 @@
 
         // Criamos essa função separada para não repetir código
 
+        const ADMIN_LIST = [
+            'japoninho@gmail.com',
+            'outro-admin@gmail.com'
+        ];
+
         async function checkWhitelist(email) {
             try {
                 const whiteDoc = await db.collection('whitelist').doc(email).get();
                 if (whiteDoc.exists) {
-                    // 1. Mostra a área administrativa
-                    const adminArea = document.getElementById('admin-area');
-                    if (adminArea) adminArea.classList.remove('hidden');
+                    // AJUSTE AQUI: Só remove o 'hidden' se o e-mail estiver na ADMIN_LIST
+                    if (ADMIN_LIST.includes(email.toLowerCase())) {
+                        document.getElementById('admin-area').classList.remove('hidden');
+                    }
 
-                    // 2. Só agora libera o jogo e inicia o banco (sessions)
                     unlockGame();
                 } else {
                     await auth.signOut();
                     showError("Acesso Negado: Seu e-mail não está na Whitelist.");
                 }
             } catch (e) {
-                console.error("Erro ao verificar whitelist:", e);
-                // Se der erro aqui com as regras ativas, é porque 
-                // a leitura da whitelist precisa ser permitida para todos.
+                showError("Erro ao verificar lista de acesso.");
             }
         }
 
