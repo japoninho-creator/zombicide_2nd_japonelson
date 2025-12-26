@@ -445,13 +445,30 @@
         // Função para Login Google + Verificação de Whitelist
         async function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
+
+            // Detecta se é um dispositivo móvel (ajuda na escolha do método)
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
             try {
-                const result = await auth.signInWithPopup(provider);
-                const userEmail = result.user.email;
+                if (isMobile) {
+                    // No mobile, usamos REDIRECT para evitar bloqueios de pop-up
+                    await auth.signInWithRedirect(provider);
+                } else {
+                    // No desktop, o POPUP continua sendo mais rápido e prático
+                    const result = await auth.signInWithPopup(provider);
+                    const userEmail = result.user.email;
+                    checkWhitelist(userEmail);
+                }
+            } catch (e) {
+                console.error(e);
+                showError("Falha na autenticação do Google.");
+            }
+        }
 
-                // Verifica se o e-mail existe na coleção 'whitelist'
-                const whiteDoc = await db.collection('whitelist').doc(userEmail).get();
-
+        // Criamos essa função separada para não repetir código
+        async function checkWhitelist(email) {
+            try {
+                const whiteDoc = await db.collection('whitelist').doc(email).get();
                 if (whiteDoc.exists) {
                     unlockGame();
                 } else {
@@ -459,7 +476,7 @@
                     showError("Acesso Negado: Seu e-mail não está na Whitelist.");
                 }
             } catch (e) {
-                showError("Falha na autenticação do Google.");
+                showError("Erro ao verificar lista de acesso.");
             }
         }
 
