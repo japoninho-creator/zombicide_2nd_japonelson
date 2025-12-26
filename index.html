@@ -416,6 +416,14 @@
             }
         }
 
+        // Adiciona o evento de tecla no campo da Master Key
+        document.getElementById('master-key-input').addEventListener('keypress', function (e) {
+            // Verifica se a tecla pressionada é Enter (código 13)
+            if (e.key === 'Enter') {
+                validateMasterKey();
+            }
+        });
+
         // Função para Login Google + Verificação de Whitelist
         async function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
@@ -635,6 +643,18 @@
         function renderTags() { document.getElementById('activeTags').innerHTML = currentTags.map((t, i) => `<div class="tag-chip">${t} <span class="tag-remove" onclick="removeTag(${i})">&times;</span></div>`).join(''); }
         function removeTag(i) { currentTags.splice(i, 1); renderTags(); }
         function toggleModal(show) { document.getElementById('modal').classList.toggle('hidden', !show); if (!show) clearFullForm(); }
+
+        document.addEventListener('keydown', function (e) {
+            // Se a tecla for Esc (Escape)
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('modal');
+                // Verifica se o modal NÃO está escondido antes de fechar
+                if (!modal.classList.contains('hidden')) {
+                    toggleModal(false);
+                }
+            }
+        });
+
         function openNewRecord() { editID = null; toggleModal(true); }
         function clearFullForm() { document.getElementById('gameForm').reset(); currentTags = []; selectedSurvivors = {}; renderTags(); renderCharGrid(); }
         function handleSort(key) {
