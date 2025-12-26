@@ -480,19 +480,20 @@
             try {
                 const whiteDoc = await db.collection('whitelist').doc(email).get();
                 if (whiteDoc.exists) {
-                    // Se chegou aqui, o usuário está logado e autorizado
-                    document.getElementById('admin-area').classList.remove('hidden');
+                    // 1. Mostra a área administrativa
+                    const adminArea = document.getElementById('admin-area');
+                    if (adminArea) adminArea.classList.remove('hidden');
 
-                    // AGORA SIM liberamos o jogo e carregamos os dados
+                    // 2. Só agora libera o jogo e inicia o banco (sessions)
                     unlockGame();
                 } else {
                     await auth.signOut();
                     showError("Acesso Negado: Seu e-mail não está na Whitelist.");
                 }
             } catch (e) {
-                // Se cair aqui, pode ser que o login ainda esteja sendo processado
-                console.error("Erro na Whitelist:", e);
-                showError("Validando credenciais de sobrevivente...");
+                console.error("Erro ao verificar whitelist:", e);
+                // Se der erro aqui com as regras ativas, é porque 
+                // a leitura da whitelist precisa ser permitida para todos.
             }
         }
 
