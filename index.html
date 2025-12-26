@@ -504,43 +504,61 @@
 
         // Verifica automaticamente se o usuário já está logado ao abrir a página
         // Função que roda assim que o Firebase termina de carregar
+
         async function initAuth() {
-            // 1. Tenta capturar o resultado do redirecionamento do Google (essencial para Mobile)
-            try {
-                const result = await auth.getRedirectResult();
-                if (result.user) {
-                    localStorage.removeItem('awaiting_google');
-                    checkWhitelist(result.user.email);
-                    return; // Se logou por aqui, não precisa seguir para o onAuthStateChanged agora
-                }
-            } catch (e) {
-                console.error("Erro no retorno do Google:", e);
-                showError("Falha ao processar login do Google.");
-            }
+    // 1. Garantir que o passo da Master Key comece escondido se estivermos voltando do Google
+    if (localStorage.getItem('awaiting_google')) {
+        document.getElementById('step-key').classList.add('hidden');
+        showError("Identificando sobrevivente...");
+    }
 
-            // 2. O "Vigia" padrão para sessões já existentes
-            auth.onAuthStateChanged(async (user) => {
-                const isAwaiting = localStorage.getItem('awaiting_google');
-
-                if (user) {
-                    localStorage.removeItem('awaiting_google');
-                    checkWhitelist(user.email);
-                } else if (isAwaiting) {
-                    // Se ainda está travado aqui, vamos dar um tempo para o Firebase "acordar"
-                    // Se demorar mais de 5 segundos, devolvemos para a tela de Master Key
-                    setTimeout(() => {
-                        if (!auth.currentUser) {
-                            localStorage.removeItem('awaiting_google');
-                            document.getElementById('step-key').classList.remove('hidden');
-                            showError("Tempo esgotado. Tente a Master Key novamente.");
-                        }
-                    }, 10000);
-                } else {
-                    // Caso normal: ninguém logado, mostra a Master Key
-                    document.getElementById('step-key').classList.remove('hidden');
-                }
-            });
+    try {
+        // 2. Aguarda o resultado do redirecionamento com persistência
+        // O Firebase às vezes precisa que essa função seja chamada explicitamente após o carregamento
+        const result = await auth.getRedirectResult();
+        
+        if (result && result.user) {
+            console.log("Login via redirect detectado!");
+            localStorage.removeItem('awaiting_google');
+            checkWhitelist(result.user.email);
+            return; 
         }
+    } catch (e) {
+        console.error("Erro no RedirectResult:", e);
+        localStorage.removeItem('awaiting_google');
+        document.getElementById('step-key').classList.remove('hidden');
+        showError("Erro na conexão com o Google. Tente novamente.");
+        return;
+    }
+
+    // 3. O Vigia de Sessão (onAuthStateChanged)
+    auth.onAuthStateChanged(async (user) => {
+        const isAwaiting = localStorage.getItem('awaiting_google');
+
+        if (user) {
+            localStorage.removeItem('awaiting_google');
+            checkWhitelist(user.email);
+        } else {
+            // Se NÃO tem usuário e NÃO estamos mais esperando o Google, mostra a chave
+            if (!isAwaiting) {
+                document.getElementById('step-key').classList.remove('hidden');
+                // Limpa mensagens de erro antigas se houver
+                if(document.getElementById('auth-error').innerText === "Identificando sobrevivente...") {
+                    document.getElementById('auth-error').classList.add('hidden');
+                }
+            } else {
+                // Se ainda está esperando, damos uma última chance de 3 segundos
+                setTimeout(() => {
+                    if (!auth.currentUser && localStorage.getItem('awaiting_google')) {
+                        localStorage.removeItem('awaiting_google');
+                        document.getElementById('step-key').classList.remove('hidden');
+                        showError("Sessão expirada. Por favor, use a Master Key.");
+                    }
+                }, 3000);
+            }
+        }
+    });
+}
 
         // Chame a função de inicialização
         initAuth();
