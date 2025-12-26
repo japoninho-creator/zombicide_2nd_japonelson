@@ -394,7 +394,7 @@
         // 1. CONFIGURAÇÃO FIREBASE (COLE SUAS CHAVES AQUI)
         const firebaseConfig = {
             apiKey: "AIzaSyC_IBBbkq_urNfPKC6IyBkaSSxDbBVdoEc",
-            authDomain: "zombicide-2nd.firebaseapp.com",
+            authDomain: "zombicide-2nd-japonelson.vercel.app",
             projectId: "zombicide-2nd",
             storageBucket: "zombicide-2nd.firebasestorage.app",
             messagingSenderId: "532827713560",
@@ -526,7 +526,8 @@
                 }
             } catch (e) {
                 console.error("Erro no Auth:", e);
-                // Se o erro for de domínio não autorizado, ele aparecerá no console aqui
+                // Isso vai mostrar o código do erro real na tela do celular
+                showError("Erro Real: " + e.code + " - " + e.message);
             }
 
             // VIGIA DE ESTADO COM LOOP DE TENTATIVA MAIS LONGO
@@ -763,6 +764,16 @@
         function updateTagSuggestions() { const unique = [...new Set(gameData.flatMap(g => g.players))]; document.getElementById('suggestedPlayers').innerHTML = unique.map(p => `<option value="${p}">`).join(''); }
         function exportToJSON() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(gameData, null, 2)], { type: 'application/json' })); a.download = 'zombicide_cloud_backup.json'; a.click(); }
         function exportToCSV() { const headers = "Status,Missao,Dificuldade,Turnos,Duracao,Mortos,Jogadores\n"; const csv = gameData.map(g => `${g.status},"${g.mission}","${g.difficulty}",${g.turns},${g.time},${g.team.filter(s => s.status === 'dead').length},"${g.players.join(';')}"`).join("\n"); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([headers + csv], { type: 'text/csv' })); a.download = 'zombicide_cloud_logs.csv'; a.click(); }
+        window.onload = () => {
+            // Pequeno delay de 1s para o motor do Firebase "esquentar" no Android
+            setTimeout(() => {
+                initAuth().catch(err => {
+                    // Se der erro na inicialização, mostra o código real na tela
+                    showError("ERRO TÉCNICO: " + err.code);
+                    console.error(err);
+                });
+            }, 1000);
+        };
     </script>
 </body>
 
