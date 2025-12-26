@@ -196,132 +196,203 @@
 
     <div id="game-content" class="invisible">
 
-        <header
-            class="bg-black border-b-2 border-red-600 p-6 sticky top-0 z-40 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+        <button onclick="toggleSidebar()"
+            class="fixed top-4 left-4 z-50 p-2 bg-gray-800 text-white rounded-md lg:hidden">
+            <i class="fa-solid fa-bars"></i>
+        </button>
 
-            <div class="flex items-center gap-4">
-                <img src="https://www.cmon.com/wp-content/uploads/2024/05/Small-Hero.png" alt="Logo Zombicide"
-                    class="w-20 h-20 object-contain filter drop-shadow-[0_0_5px_rgba(220,38,38,0.8)]">
+        <aside id="sidebar"
+            class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full lg:translate-x-0 bg-gray-900 border-r border-gray-800 flex flex-col">
 
-                <div class="flex flex-col">
-                    <div class="flex items-center gap-3">
-                        <h1 class="text-3xl font-black tracking-tighter text-red-600 uppercase italic leading-none">
-                            Zombicide 2.0
-                        </h1>
-                        <button onclick="logout()"
-                            class="flex items-center gap-2 bg-gray-800/50 hover:bg-red-900/40 text-gray-400 hover:text-red-500 px-3 py-1.5 rounded-md border border-gray-700 transition-all text-[10px] font-bold uppercase tracking-tighter">
-                            <i class="fa-solid fa-right-from-bracket"></i>
-                            <span>Sair / Trocar Conta</span>
-                        </button>
-                    </div>
-                    <div id="admin-area" class="mt-4 p-4 border-t border-gray-700 hidden">
-                        <h3 class="text-sm font-bold text-gray-400 mb-2 uppercase">Recrutar Sobrevivente</h3>
-                        <div class="flex gap-2">
-                            <input type="email" id="new-whitelist-email" placeholder="email@exemplo.com"
-                                class="flex-1 p-2 bg-gray-800 border border-gray-600 rounded text-white text-sm">
-                            <button onclick="addToWhitelist()"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition">
-                                Autorizar
+            <div class="p-6 border-b border-gray-800">
+                <h2 class="text-xl font-black text-red-600 uppercase italic tracking-tighter">Z-Menu</h2>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-2">
+
+                <a href="#missoes"
+                    class="flex items-center p-2 text-gray-300 hover:bg-gray-800 rounded-lg group transition">
+                    <i class="fa-solid fa-map-location-dot w-6 text-red-500"></i>
+                    <span class="ml-3 font-bold uppercase text-xs tracking-widest">Missões</span>
+                </a>
+
+                <a href="#personagens"
+                    class="flex items-center p-2 text-gray-300 hover:bg-gray-800 rounded-lg group transition">
+                    <i class="fa-solid fa-users w-6 text-red-500"></i>
+                    <span class="ml-3 font-bold uppercase text-xs tracking-widest">Personagens</span>
+                </a>
+
+                <a href="#bestiario"
+                    class="flex items-center p-2 text-gray-300 hover:bg-gray-800 rounded-lg group transition">
+                    <i class="fa-solid fa-skull w-6 text-red-500"></i>
+                    <span class="ml-3 font-bold uppercase text-xs tracking-widest">Bestiário</span>
+                </a>
+
+                <div class="space-y-1">
+                    <button onclick="toggleSubmenu('submenu-itens')"
+                        class="flex items-center w-full p-2 text-gray-300 hover:bg-gray-800 rounded-lg group transition">
+                        <i class="fa-solid fa-gun w-6 text-red-500"></i>
+                        <span class="flex-1 ml-3 text-left font-bold uppercase text-xs tracking-widest">Itens</span>
+                        <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                    <ul id="submenu-itens" class="hidden py-2 space-y-1 pl-10 border-l border-gray-700 ml-4">
+                        <li><a href="#itens-iniciais"
+                                class="block p-2 text-gray-400 hover:text-white text-xs uppercase font-medium">Iniciais</a>
+                        </li>
+                        <li><a href="#itens-encontraveis"
+                                class="block p-2 text-gray-400 hover:text-white text-xs uppercase font-medium">Encontráveis</a>
+                        </li>
+                        <li><a href="#itens-amarela"
+                                class="block p-2 text-gray-400 hover:text-white text-xs uppercase font-medium">Caixa
+                                Amarela</a></li>
+                    </ul>
+                </div>
+
+                <a href="#regras"
+                    class="flex items-center p-2 text-gray-300 hover:bg-gray-800 rounded-lg group transition">
+                    <i class="fa-solid fa-list-check w-6 text-red-500"></i>
+                    <span class="ml-3 font-bold uppercase text-xs tracking-widest text-wrap">Regras Adicionais</span>
+                </a>
+
+                <a href="https://link-para-o-manual.pdf" target="_blank"
+                    class="flex items-center p-2 text-gray-300 hover:bg-gray-800 rounded-lg group transition">
+                    <i class="fa-solid fa-book-open w-6 text-red-500"></i>
+                    <span class="ml-3 font-bold uppercase text-xs tracking-widest">Manual Completo</span>
+                </a>
+            </nav>
+        </aside>
+        <div class="lg:ml-64 transition-all duration-300">
+            <header
+                class="bg-black border-b-2 border-red-600 p-6 sticky top-0 z-40 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+
+                <div class="flex items-center gap-4">
+                    <img src="https://www.cmon.com/wp-content/uploads/2024/05/Small-Hero.png" alt="Logo Zombicide"
+                        class="w-20 h-20 object-contain filter drop-shadow-[0_0_5px_rgba(220,38,38,0.8)]">
+
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-3">
+                            <h1 class="text-3xl font-black tracking-tighter text-red-600 uppercase italic leading-none">
+                                Zombicide 2.0
+                            </h1>
+                            <button onclick="logout()"
+                                class="flex items-center gap-2 bg-gray-800/50 hover:bg-red-900/40 text-gray-400 hover:text-red-500 px-3 py-1.5 rounded-md border border-gray-700 transition-all text-[10px] font-bold uppercase tracking-tighter">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                                <span>Sair / Trocar Conta</span>
                             </button>
                         </div>
-                    </div>
-                    <p class="text-[10px] text-gray-500 font-mono tracking-widest mt-1 uppercase">
-                        Relatório em Nuvem (Firebase)
-                    </p>
-                </div>
-            </div>
-
-            <button onclick="openNewRecord()"
-                class="bg-red-600 hover:bg-red-700 text-white font-black py-3 px-8 rounded shadow-lg transition-transform active:scale-95 uppercase text-sm">Novo
-                Registro</button>
-        </header>
-
-        <section class="max-w-7xl mx-auto p-4 mt-4">
-            <div
-                class="bg-gray-800/50 border border-gray-700 rounded-xl p-4 flex flex-wrap justify-between items-center gap-6">
-                <div class="flex items-center gap-6">
-                    <div class="text-center">
-                        <p class="text-[9px] uppercase font-bold text-gray-500 mb-1">Total de Sessões</p>
-                        <button onclick="renderTable()" class="text-2xl font-black hover:text-blue-400"
-                            id="totalCount">0</button>
-                    </div>
-                    <div class="h-8 w-[1px] bg-gray-700"></div>
-                    <button onclick="filterByStatus('win')" class="text-center group">
-                        <p class="text-[9px] uppercase font-bold text-gray-400 group-hover:text-green-500">Vitórias</p>
-                        <p class="text-2xl font-black text-green-500" id="winCount">0</p>
-                    </button>
-                    <button onclick="filterByStatus('loss')" class="text-center group">
-                        <p class="text-[9px] uppercase font-bold text-gray-400 group-hover:text-red-500">Derrotas</p>
-                        <p class="text-2xl font-black text-red-500" id="lossCount">0</p>
-                    </button>
-                    <div class="h-8 w-[1px] bg-gray-700"></div>
-                    <div class="text-center">
-                        <p class="text-[9px] uppercase font-bold text-red-400 mb-1 italic">Mortes Totais</p>
-                        <p class="text-2xl font-black text-red-600" id="deadCount">0</p>
-                    </div>
-                    <div class="h-8 w-[1px] bg-gray-700"></div>
-                    <div class="text-center">
-                        <p class="text-[9px] uppercase font-bold text-yellow-600 mb-1 italic">Tempo Total de Jogo</p>
-                        <p class="text-2xl font-black text-[#eab308]" id="totalTimeCount">0h:00m</p>
+                        <div id="admin-area" class="mt-4 p-4 border-t border-gray-700 hidden">
+                            <h3 class="text-sm font-bold text-gray-400 mb-2 uppercase">Recrutar Sobrevivente</h3>
+                            <div class="flex gap-2">
+                                <input type="email" id="new-whitelist-email" placeholder="email@exemplo.com"
+                                    class="flex-1 p-2 bg-gray-800 border border-gray-600 rounded text-white text-sm">
+                                <button onclick="addToWhitelist()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition">
+                                    Autorizar
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-gray-500 font-mono tracking-widest mt-1 uppercase">
+                            Relatório em Nuvem (Firebase)
+                        </p>
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <button onclick="exportToJSON()"
-                        class="text-[10px] bg-gray-700 px-3 py-2 rounded font-bold uppercase">📤 EXPORTAR</button>
-                    <button onclick="exportToCSV()"
-                        class="text-[10px] bg-green-900 px-3 py-2 rounded font-bold uppercase">📊 CSV</button>
-                    <button onclick="dangerReset()"
-                        class="text-[10px] border border-red-900 text-red-500 px-3 py-2 rounded font-bold uppercase">Limpar
-                        Nuvem</button>
+
+                <button onclick="openNewRecord()"
+                    class="bg-red-600 hover:bg-red-700 text-white font-black py-3 px-8 rounded shadow-lg transition-transform active:scale-95 uppercase text-sm">Novo
+                    Registro</button>
+            </header>
+            <section class="max-w-7xl mx-auto p-4 mt-4">
+                <div
+                    class="bg-gray-800/50 border border-gray-700 rounded-xl p-4 flex flex-wrap justify-between items-center gap-6">
+                    <div class="flex items-center gap-6">
+                        <div class="text-center">
+                            <p class="text-[9px] uppercase font-bold text-gray-500 mb-1">Total de Sessões</p>
+                            <button onclick="renderTable()" class="text-2xl font-black hover:text-blue-400"
+                                id="totalCount">0</button>
+                        </div>
+                        <div class="h-8 w-[1px] bg-gray-700"></div>
+                        <button onclick="filterByStatus('win')" class="text-center group">
+                            <p class="text-[9px] uppercase font-bold text-gray-400 group-hover:text-green-500">Vitórias
+                            </p>
+                            <p class="text-2xl font-black text-green-500" id="winCount">0</p>
+                        </button>
+                        <button onclick="filterByStatus('loss')" class="text-center group">
+                            <p class="text-[9px] uppercase font-bold text-gray-400 group-hover:text-red-500">Derrotas
+                            </p>
+                            <p class="text-2xl font-black text-red-500" id="lossCount">0</p>
+                        </button>
+                        <div class="h-8 w-[1px] bg-gray-700"></div>
+                        <div class="text-center">
+                            <p class="text-[9px] uppercase font-bold text-red-400 mb-1 italic">Mortes Totais</p>
+                            <p class="text-2xl font-black text-red-600" id="deadCount">0</p>
+                        </div>
+                        <div class="h-8 w-[1px] bg-gray-700"></div>
+                        <div class="text-center">
+                            <p class="text-[9px] uppercase font-bold text-yellow-600 mb-1 italic">Tempo Total de Jogo
+                            </p>
+                            <p class="text-2xl font-black text-[#eab308]" id="totalTimeCount">0h:00m</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="exportToJSON()"
+                            class="text-[10px] bg-gray-700 px-3 py-2 rounded font-bold uppercase">📤 EXPORTAR</button>
+                        <button onclick="exportToCSV()"
+                            class="text-[10px] bg-green-900 px-3 py-2 rounded font-bold uppercase">📊 CSV</button>
+                        <button onclick="dangerReset()"
+                            class="text-[10px] border border-red-900 text-red-500 px-3 py-2 rounded font-bold uppercase">Limpar
+                            Nuvem</button>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <main class="max-w-7xl mx-auto px-4 mt-2">
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden shadow-2xl">
-                <div class="overflow-x-auto custom-scroll"></div>
-                <table class="w-full text-left border-collapse min-w-[1000px]">
-                    <thead class="bg-gray-900 text-gray-500 text-[10px] uppercase font-bold border-b border-gray-700">
-                        <tr>
-                            <th class="p-4 w-16">Status</th>
-                            <th class="p-4 min-w-[200px]">
-                                <div class="flex flex-col gap-2">
-                                    <span class="cursor-pointer hover:text-red-500"
-                                        onclick="handleSort('mission')">Missão
-                                        ⇅</span>
-                                    <input type="text" id="missionSearch" onkeyup="filterByMission(this.value)"
-                                        placeholder="🔍 Buscar..."
-                                        class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] outline-none w-full">
-                                </div>
-                            </th>
-                            <th class="p-4 w-28">
-                                <div class="flex flex-col gap-2">
-                                    <span class="cursor-pointer hover:text-red-500"
-                                        onclick="handleSort('difficulty')">Nível
-                                        ⇅</span>
-                                    <select onchange="filterByDifficulty(this.value)"
-                                        class="bg-gray-800 border border-gray-700 rounded text-[10px] outline-none p-1">
-                                        <option value="">Todos</option>
-                                        <option value="Fácil">Fácil</option>
-                                        <option value="Médio">Médio</option>
-                                        <option value="Difícil">Difícil</option>
-                                    </select>
-                                </div>
-                            </th>
-                            <th class="p-4">Time (Ciano: Vivo | Rubro: Morto)</th>
-                            <th class="p-4 text-center cursor-pointer hover:text-red-500" onclick="handleSort('turns')">
-                                Turnos ⇅</th>
-                            <th class="p-4 text-center cursor-pointer hover:text-red-500" onclick="handleSort('time')">
-                                Duração ⇅</th>
-                            <th class="p-4">Jogadores</th>
-                            <th class="p-4 text-right">Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboardBody" class="divide-y divide-gray-700/50"></tbody>
-                </table>
-            </div>
-        </main>
-
+            <main class="max-w-7xl mx-auto px-4 mt-2">
+                <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden shadow-2xl">
+                    <div class="overflow-x-auto custom-scroll"></div>
+                    <table class="w-full text-left border-collapse min-w-[1000px]">
+                        <thead
+                            class="bg-gray-900 text-gray-500 text-[10px] uppercase font-bold border-b border-gray-700">
+                            <tr>
+                                <th class="p-4 w-16">Status</th>
+                                <th class="p-4 min-w-[200px]">
+                                    <div class="flex flex-col gap-2">
+                                        <span class="cursor-pointer hover:text-red-500"
+                                            onclick="handleSort('mission')">Missão
+                                            ⇅</span>
+                                        <input type="text" id="missionSearch" onkeyup="filterByMission(this.value)"
+                                            placeholder="🔍 Buscar..."
+                                            class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] outline-none w-full">
+                                    </div>
+                                </th>
+                                <th class="p-4 w-28">
+                                    <div class="flex flex-col gap-2">
+                                        <span class="cursor-pointer hover:text-red-500"
+                                            onclick="handleSort('difficulty')">Nível
+                                            ⇅</span>
+                                        <select onchange="filterByDifficulty(this.value)"
+                                            class="bg-gray-800 border border-gray-700 rounded text-[10px] outline-none p-1">
+                                            <option value="">Todos</option>
+                                            <option value="Fácil">Fácil</option>
+                                            <option value="Médio">Médio</option>
+                                            <option value="Difícil">Difícil</option>
+                                        </select>
+                                    </div>
+                                </th>
+                                <th class="p-4">Time (Ciano: Vivo | Rubro: Morto)</th>
+                                <th class="p-4 text-center cursor-pointer hover:text-red-500"
+                                    onclick="handleSort('turns')">
+                                    Turnos ⇅</th>
+                                <th class="p-4 text-center cursor-pointer hover:text-red-500"
+                                    onclick="handleSort('time')">
+                                    Duração ⇅</th>
+                                <th class="p-4">Jogadores</th>
+                                <th class="p-4 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody" class="divide-y divide-gray-700/50"></tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
     </div>
 
     <div id="modal" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-50">
