@@ -444,29 +444,22 @@
         });
 
         // Função para Login Google + Verificação de Whitelist
+        // Substitua o método de login por este que força o uso de uma conta
         async function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            // Adiciona escopos básicos para garantir que o Google envie os dados
-            provider.addScope('profile');
-            provider.addScope('email');
-
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            provider.setCustomParameters({
+                prompt: 'select_account' // Isso força o Android a mostrar a caixa de seleção e revalidar o token
+            });
 
             try {
-                // Força a persistência LOCAL antes de qualquer tentativa de login
-                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-
-                if (isMobile) {
+                if (/Android|iPhone/i.test(navigator.userAgent)) {
                     localStorage.setItem('awaiting_google', 'true');
-                    // O segredo para Mobile: signInWithRedirect PRECISA do provider configurado
                     await auth.signInWithRedirect(provider);
                 } else {
-                    const result = await auth.signInWithPopup(provider);
-                    checkWhitelist(result.user.email);
+                    await auth.signInWithPopup(provider);
                 }
             } catch (e) {
-                console.error(e);
-                showError("Erro ao iniciar login: " + e.code);
+                showError("Erro: " + e.code);
             }
         }
 
