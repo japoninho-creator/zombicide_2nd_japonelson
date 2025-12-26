@@ -1,274 +1,514 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zombicide 2.0 - Cloud Leaderboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
         /* CSS EXATAMENTE IGUAL AO ZOMBICIDE 2ND.HTML */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-body { 
-    font-family: 'Inter', sans-serif; 
-    background-color: #0f172a; /* Cor que aparecerá "por baixo" */
-    margin: 0;
-    padding: 0;
-    position: relative;
-    min-height: 100vh;
-}
 
-body::before {
-    content: "";
-    position: fixed; /* Fixa o fundo para não rolar com a página */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('https://www.cmon.com/wp-content/uploads/2023/06/Zombicide_thumb_coreset.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0.1; /* 10% de visibilidade da imagem (90% de opacidade/transparência) */
-    z-index: -1; /* Garante que fique atrás de todo o conteúdo */
-    pointer-events: none; /* Garante que não atrapalhe cliques em botões */
-}
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #ef4444; border-radius: 10px; }
-        .tag-chip { display: inline-flex; align-items: center; background: #1e293b; color: #f1f5f9; padding: 4px 10px; border-radius: 6px; margin: 2px; font-size: 0.75rem; border: 1px solid #334155; font-weight: 600; }
-        .tag-remove { margin-left: 8px; cursor: pointer; color: #ef4444; }
-        .diff-tag { font-size: 9px; font-weight: 900; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; border-width: 1px; }
-        .diff-facil { background: rgba(34, 197, 94, 0.1); color: #4ade80; border-color: rgba(34, 197, 94, 0.3); }
-        .diff-medio { background: rgba(234, 179, 8, 0.1); color: #facc15; border-color: rgba(234, 179, 8, 0.3); }
-        .diff-dificil { background: rgba(239, 68, 68, 0.1); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
-        .status-alive { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid #0891b2; box-shadow: 0 0 5px rgba(6, 182, 212, 0.2); }
-        .status-dead { background: rgba(153, 27, 27, 0.2); color: #f87171; border: 1px solid #991b1b; text-decoration: line-through; opacity: 0.8; }
-        .char-card-selected { border-color: #ef4444 !important; background: #1e293b !important; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            /* Cor que aparecerá "por baixo" */
+            margin: 0;
+            padding: 0;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            /* Fixa o fundo para não rolar com a página */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://www.cmon.com/wp-content/uploads/2023/06/Zombicide_thumb_coreset.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.1;
+            /* 10% de visibilidade da imagem (90% de opacidade/transparência) */
+            z-index: -1;
+            /* Garante que fique atrás de todo o conteúdo */
+            pointer-events: none;
+            /* Garante que não atrapalhe cliques em botões */
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #ef4444;
+            border-radius: 10px;
+        }
+
+        .tag-chip {
+            display: inline-flex;
+            align-items: center;
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin: 2px;
+            font-size: 0.75rem;
+            border: 1px solid #334155;
+            font-weight: 600;
+        }
+
+        .tag-remove {
+            margin-left: 8px;
+            cursor: pointer;
+            color: #ef4444;
+        }
+
+        .diff-tag {
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border-width: 1px;
+        }
+
+        .diff-facil {
+            background: rgba(34, 197, 94, 0.1);
+            color: #4ade80;
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .diff-medio {
+            background: rgba(234, 179, 8, 0.1);
+            color: #facc15;
+            border-color: rgba(234, 179, 8, 0.3);
+        }
+
+        .diff-dificil {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .status-alive {
+            background: rgba(6, 182, 212, 0.15);
+            color: #22d3ee;
+            border: 1px solid #0891b2;
+            box-shadow: 0 0 5px rgba(6, 182, 212, 0.2);
+        }
+
+        .status-dead {
+            background: rgba(153, 27, 27, 0.2);
+            color: #f87171;
+            border: 1px solid #991b1b;
+            text-decoration: line-through;
+            opacity: 0.8;
+        }
+
+        .char-card-selected {
+            border-color: #ef4444 !important;
+            background: #1e293b !important;
+        }
+
+        #auth-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.98);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-blur: 10px;
+        }
+
+        .auth-card {
+            background: #1e293b;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            border: 1px solid #ef4444;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 0 50px rgba(239, 68, 68, 0.2);
+        }
     </style>
 </head>
+
 <body class="text-gray-100 min-h-screen pb-10">
 
-<header class="bg-black border-b-2 border-red-600 p-6 sticky top-0 z-40 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4">
-    <div class="flex items-center gap-4">
-        <img src="https://www.cmon.com/wp-content/uploads/2024/05/Small-Hero.png" alt="Logo Zombicide" class="w-20 h-20 object-contain filter drop-shadow-[0_0_5px_rgba(220,38,38,0.8)]">
-        <div>
-            <h1 class="text-3xl font-black tracking-tighter text-red-600 uppercase italic leading-none">Zombicide 2.0</h1>
-            <p class="text-[10px] text-gray-500 font-mono tracking-widest mt-1 uppercase">Relatório em Nuvem (Firebase)</p>
+    <div id="auth-overlay">
+        <div class="auth-card text-center">
+            <img src="https://www.cmon.com/wp-content/uploads/2024/05/Small-Hero.png"
+                class="w-32 mx-auto mb-6 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+            <h2 class="text-2xl font-black text-red-600 uppercase italic mb-2">Acesso Restrito</h2>
+            <p class="text-xs text-gray-400 mb-8 uppercase tracking-widest">Protocolo de Segurança Zombicide</p>
+
+            <div id="step-key">
+                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2 text-left">Insira a Master Key de
+                    40 Caracteres</label>
+                <input type="password" id="master-key-input"
+                    class="w-full bg-gray-900 border border-gray-700 rounded p-3 outline-none focus:border-red-600 text-xs mb-4"
+                    placeholder="••••••••••••••••••••••••••••••••••••••••">
+                <button onclick="validateMasterKey()"
+                    class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded uppercase text-sm transition-all">Validar
+                    Chave</button>
+            </div>
+
+            <div id="step-google" class="hidden">
+                <p class="text-sm text-green-500 font-bold mb-4">✓ Chave Aceita. Agora identifique-se:</p>
+                <button onclick="loginWithGoogle()"
+                    class="w-full bg-white hover:bg-gray-200 text-black font-bold py-3 rounded flex items-center justify-center gap-3 transition-all">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5">
+                    Entrar com Google
+                </button>
+            </div>
+            <p id="auth-error" class="text-red-500 text-[10px] font-bold mt-4 uppercase hidden"></p>
         </div>
     </div>
-    <button onclick="openNewRecord()" class="bg-red-600 hover:bg-red-700 text-white font-black py-3 px-8 rounded shadow-lg transition-transform active:scale-95 uppercase text-sm">Novo Registro</button>
-</header>
 
-<section class="max-w-7xl mx-auto p-4 mt-4">
-    <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-4 flex flex-wrap justify-between items-center gap-6">
-        <div class="flex items-center gap-6">
-            <div class="text-center">
-                <p class="text-[9px] uppercase font-bold text-gray-500 mb-1">Total de Sessões</p>
-                <button onclick="renderTable()" class="text-2xl font-black hover:text-blue-400" id="totalCount">0</button>
-            </div>
-            <div class="h-8 w-[1px] bg-gray-700"></div>
-            <button onclick="filterByStatus('win')" class="text-center group">
-                <p class="text-[9px] uppercase font-bold text-gray-400 group-hover:text-green-500">Vitórias</p>
-                <p class="text-2xl font-black text-green-500" id="winCount">0</p>
-            </button>
-            <button onclick="filterByStatus('loss')" class="text-center group">
-                <p class="text-[9px] uppercase font-bold text-gray-400 group-hover:text-red-500">Derrotas</p>
-                <p class="text-2xl font-black text-red-500" id="lossCount">0</p>
-            </button>
-            <div class="h-8 w-[1px] bg-gray-700"></div>
-            <div class="text-center">
-                <p class="text-[9px] uppercase font-bold text-red-400 mb-1 italic">Mortes Totais</p>
-                <p class="text-2xl font-black text-red-600" id="deadCount">0</p>
-            </div>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <button onclick="exportToJSON()" class="text-[10px] bg-gray-700 px-3 py-2 rounded font-bold uppercase">📤 EXPORTAR</button>
-            <button onclick="exportToCSV()" class="text-[10px] bg-green-900 px-3 py-2 rounded font-bold uppercase">📊 CSV</button>
-            <button onclick="dangerReset()" class="text-[10px] border border-red-900 text-red-500 px-3 py-2 rounded font-bold uppercase">Limpar Nuvem</button>
-        </div>
-    </div>
-</section>
+    <div id="game-content" class="invisible">
 
-<main class="max-w-7xl mx-auto px-4 mt-2">
-    <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden shadow-2xl">
-        <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-900 text-gray-500 text-[10px] uppercase font-bold border-b border-gray-700">
-                <tr>
-                    <th class="p-4 w-16">Status</th>
-                    <th class="p-4 min-w-[200px]">
-                        <div class="flex flex-col gap-2">
-                            <span class="cursor-pointer hover:text-red-500" onclick="handleSort('mission')">Missão ⇅</span>
-                            <input type="text" id="missionSearch" onkeyup="filterByMission(this.value)" placeholder="🔍 Buscar..." class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] outline-none w-full">
-                        </div>
-                    </th>
-                    <th class="p-4 w-28">
-                        <div class="flex flex-col gap-2">
-                            <span class="cursor-pointer hover:text-red-500" onclick="handleSort('difficulty')">Nível ⇅</span>
-                            <select onchange="filterByDifficulty(this.value)" class="bg-gray-800 border border-gray-700 rounded text-[10px] outline-none p-1">
-                                <option value="">Todos</option>
-                                <option value="Fácil">Fácil</option>
-                                <option value="Médio">Médio</option>
-                                <option value="Difícil">Difícil</option>
-                            </select>
-                        </div>
-                    </th>
-                    <th class="p-4">Time (Ciano: Vivo | Rubro: Morto)</th>
-                    <th class="p-4 text-center cursor-pointer hover:text-red-500" onclick="handleSort('turns')">Turnos ⇅</th>
-                    <th class="p-4 text-center cursor-pointer hover:text-red-500" onclick="handleSort('time')">Duração ⇅</th>
-                    <th class="p-4">Jogadores</th>
-                    <th class="p-4 text-right">Ação</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboardBody" class="divide-y divide-gray-700/50"></tbody>
-        </table>
-    </div>
-</main>
-
-<div id="modal" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-50">
-    <div class="bg-gray-800 w-full max-w-4xl rounded-xl border border-gray-700 flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
-        <div class="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-800/50">
-            <h2 class="text-xl font-black text-red-500 uppercase italic">Log de Sobrevivência</h2>
-            <button onclick="toggleModal(false)" class="text-gray-500 text-3xl">&times;</button>
-        </div>
-        <form id="gameForm" class="p-6 overflow-y-auto custom-scroll space-y-8" onsubmit="event.preventDefault();">
-            <div class="flex justify-center gap-6">
-                <label class="relative cursor-pointer">
-                    <input type="radio" name="result" value="win" class="peer hidden" checked>
-                    <div class="px-10 py-3 rounded border-2 border-gray-700 text-gray-500 font-black uppercase peer-checked:bg-green-600 peer-checked:border-green-400 peer-checked:text-white transition-all">Vitória</div>
-                </label>
-                <label class="relative cursor-pointer">
-                    <input type="radio" name="result" value="loss" class="peer hidden">
-                    <div class="px-10 py-3 rounded border-2 border-gray-700 text-gray-500 font-black uppercase peer-checked:bg-red-600 peer-checked:border-red-400 peer-checked:text-white transition-all">Derrota</div>
-                </label>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <header
+            class="bg-black border-b-2 border-red-600 p-6 sticky top-0 z-40 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <img src="https://www.cmon.com/wp-content/uploads/2024/05/Small-Hero.png" alt="Logo Zombicide"
+                    class="w-20 h-20 object-contain filter drop-shadow-[0_0_5px_rgba(220,38,38,0.8)]">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Missão Escolhida</label>
-                    <input list="missionsList" id="missionInput" class="w-full bg-gray-900 border border-gray-700 rounded p-3 outline-none focus:border-red-600" placeholder="Selecione ou digite a missão...">
-                    <datalist id="missionsList"></datalist>
+                    <h1 class="text-3xl font-black tracking-tighter text-red-600 uppercase italic leading-none">
+                        Zombicide
+                        2.0</h1>
+                    <p class="text-[10px] text-gray-500 font-mono tracking-widest mt-1 uppercase">Relatório em Nuvem
+                        (Firebase)</p>
                 </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Jogadores (Enter ou Vírgula)</label>
-                    <div class="flex flex-wrap items-center bg-gray-900 border border-gray-700 rounded p-2 min-h-[50px] focus-within:border-red-600">
-                        <div id="activeTags" class="flex flex-wrap"></div>
-                        <input type="text" id="playerInput" class="flex-1 bg-transparent border-none outline-none p-1 text-sm min-w-[120px]" list="suggestedPlayers" placeholder="Nome do jogador...">
-                        <datalist id="suggestedPlayers"></datalist>
+            </div>
+            <button onclick="openNewRecord()"
+                class="bg-red-600 hover:bg-red-700 text-white font-black py-3 px-8 rounded shadow-lg transition-transform active:scale-95 uppercase text-sm">Novo
+                Registro</button>
+        </header>
+
+        <section class="max-w-7xl mx-auto p-4 mt-4">
+            <div
+                class="bg-gray-800/50 border border-gray-700 rounded-xl p-4 flex flex-wrap justify-between items-center gap-6">
+                <div class="flex items-center gap-6">
+                    <div class="text-center">
+                        <p class="text-[9px] uppercase font-bold text-gray-500 mb-1">Total de Sessões</p>
+                        <button onclick="renderTable()" class="text-2xl font-black hover:text-blue-400"
+                            id="totalCount">0</button>
+                    </div>
+                    <div class="h-8 w-[1px] bg-gray-700"></div>
+                    <button onclick="filterByStatus('win')" class="text-center group">
+                        <p class="text-[9px] uppercase font-bold text-gray-400 group-hover:text-green-500">Vitórias</p>
+                        <p class="text-2xl font-black text-green-500" id="winCount">0</p>
+                    </button>
+                    <button onclick="filterByStatus('loss')" class="text-center group">
+                        <p class="text-[9px] uppercase font-bold text-gray-400 group-hover:text-red-500">Derrotas</p>
+                        <p class="text-2xl font-black text-red-500" id="lossCount">0</p>
+                    </button>
+                    <div class="h-8 w-[1px] bg-gray-700"></div>
+                    <div class="text-center">
+                        <p class="text-[9px] uppercase font-bold text-red-400 mb-1 italic">Mortes Totais</p>
+                        <p class="text-2xl font-black text-red-600" id="deadCount">0</p>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Quantidade de Turnos</label>
-                    <input type="number" id="turnsInput" class="w-full bg-gray-900 border border-gray-700 rounded p-3 outline-none focus:border-red-600">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Duração</label>
-                    <input type="time" id="timeInput" class="w-full bg-gray-900 border border-gray-700 rounded p-3 outline-none">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="exportToJSON()"
+                        class="text-[10px] bg-gray-700 px-3 py-2 rounded font-bold uppercase">📤 EXPORTAR</button>
+                    <button onclick="exportToCSV()"
+                        class="text-[10px] bg-green-900 px-3 py-2 rounded font-bold uppercase">📊 CSV</button>
+                    <button onclick="dangerReset()"
+                        class="text-[10px] border border-red-900 text-red-500 px-3 py-2 rounded font-bold uppercase">Limpar
+                        Nuvem</button>
                 </div>
             </div>
-            <div class="space-y-3">
-                <div class="flex justify-between items-center border-b border-gray-700 pb-2">
-                    <label class="text-[10px] font-bold uppercase text-red-500">Seleção de Sobreviventes (Clique para trocar Vivo/Morto)</label>
-                    <input type="text" onkeyup="filterChars(this.value)" placeholder="Filtrar..." class="bg-gray-700 text-xs px-3 py-1 rounded-full outline-none w-40">
-                </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 bg-gray-900 p-4 rounded-lg max-h-56 overflow-y-auto custom-scroll" id="charGrid"></div>
+        </section>
+
+        <main class="max-w-7xl mx-auto px-4 mt-2">
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden shadow-2xl">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-900 text-gray-500 text-[10px] uppercase font-bold border-b border-gray-700">
+                        <tr>
+                            <th class="p-4 w-16">Status</th>
+                            <th class="p-4 min-w-[200px]">
+                                <div class="flex flex-col gap-2">
+                                    <span class="cursor-pointer hover:text-red-500"
+                                        onclick="handleSort('mission')">Missão
+                                        ⇅</span>
+                                    <input type="text" id="missionSearch" onkeyup="filterByMission(this.value)"
+                                        placeholder="🔍 Buscar..."
+                                        class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[10px] outline-none w-full">
+                                </div>
+                            </th>
+                            <th class="p-4 w-28">
+                                <div class="flex flex-col gap-2">
+                                    <span class="cursor-pointer hover:text-red-500"
+                                        onclick="handleSort('difficulty')">Nível
+                                        ⇅</span>
+                                    <select onchange="filterByDifficulty(this.value)"
+                                        class="bg-gray-800 border border-gray-700 rounded text-[10px] outline-none p-1">
+                                        <option value="">Todos</option>
+                                        <option value="Fácil">Fácil</option>
+                                        <option value="Médio">Médio</option>
+                                        <option value="Difícil">Difícil</option>
+                                    </select>
+                                </div>
+                            </th>
+                            <th class="p-4">Time (Ciano: Vivo | Rubro: Morto)</th>
+                            <th class="p-4 text-center cursor-pointer hover:text-red-500" onclick="handleSort('turns')">
+                                Turnos ⇅</th>
+                            <th class="p-4 text-center cursor-pointer hover:text-red-500" onclick="handleSort('time')">
+                                Duração ⇅</th>
+                            <th class="p-4">Jogadores</th>
+                            <th class="p-4 text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody" class="divide-y divide-gray-700/50"></tbody>
+                </table>
             </div>
-            <div class="flex flex-col sm:flex-row gap-3 pt-4">
-                <button type="button" onclick="saveGame()" class="flex-[2] bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded uppercase tracking-widest shadow-lg">Salvar Sessão</button>
-                <button type="button" onclick="clearFullForm()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 rounded uppercase text-xs">Limpar</button>
-                <button type="button" onclick="toggleModal(false)" class="flex-1 border border-gray-600 text-gray-400 font-bold py-4 rounded uppercase text-xs">Cancelar</button>
-            </div>
-        </form>
+        </main>
+
     </div>
-</div>
 
-<script>
-    // 1. CONFIGURAÇÃO FIREBASE (COLE SUAS CHAVES AQUI)
-const firebaseConfig = {
-  apiKey: "AIzaSyC_IBBbkq_urNfPKC6IyBkaSSxDbBVdoEc",
-  authDomain: "zombicide-2nd.firebaseapp.com",
-  projectId: "zombicide-2nd",
-  storageBucket: "zombicide-2nd.firebasestorage.app",
-  messagingSenderId: "532827713560",
-  appId: "1:532827713560:web:5053982941ad37e650936d",
-  measurementId: "G-G3WZ85G7BB"
-};
+    <div id="modal" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div
+            class="bg-gray-800 w-full max-w-4xl rounded-xl border border-gray-700 flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-800/50">
+                <h2 class="text-xl font-black text-red-500 uppercase italic">Log de Sobrevivência</h2>
+                <button onclick="toggleModal(false)" class="text-gray-500 text-3xl">&times;</button>
+            </div>
+            <form id="gameForm" class="p-6 overflow-y-auto custom-scroll space-y-8" onsubmit="event.preventDefault();">
+                <div class="flex justify-center gap-6">
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="result" value="win" class="peer hidden" checked>
+                        <div
+                            class="px-10 py-3 rounded border-2 border-gray-700 text-gray-500 font-black uppercase peer-checked:bg-green-600 peer-checked:border-green-400 peer-checked:text-white transition-all">
+                            Vitória</div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="result" value="loss" class="peer hidden">
+                        <div
+                            class="px-10 py-3 rounded border-2 border-gray-700 text-gray-500 font-black uppercase peer-checked:bg-red-600 peer-checked:border-red-400 peer-checked:text-white transition-all">
+                            Derrota</div>
+                    </label>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Missão Escolhida</label>
+                        <input list="missionsList" id="missionInput"
+                            class="w-full bg-gray-900 border border-gray-700 rounded p-3 outline-none focus:border-red-600"
+                            placeholder="Selecione ou digite a missão...">
+                        <datalist id="missionsList"></datalist>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Jogadores (Enter ou
+                            Vírgula)</label>
+                        <div
+                            class="flex flex-wrap items-center bg-gray-900 border border-gray-700 rounded p-2 min-h-[50px] focus-within:border-red-600">
+                            <div id="activeTags" class="flex flex-wrap"></div>
+                            <input type="text" id="playerInput"
+                                class="flex-1 bg-transparent border-none outline-none p-1 text-sm min-w-[120px]"
+                                list="suggestedPlayers" placeholder="Nome do jogador...">
+                            <datalist id="suggestedPlayers"></datalist>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Quantidade de
+                            Turnos</label>
+                        <input type="number" id="turnsInput"
+                            class="w-full bg-gray-900 border border-gray-700 rounded p-3 outline-none focus:border-red-600">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Duração</label>
+                        <input type="time" id="timeInput"
+                            class="w-full bg-gray-900 border border-gray-700 rounded p-3 outline-none">
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                        <label class="text-[10px] font-bold uppercase text-red-500">Seleção de Sobreviventes (Clique
+                            para trocar Vivo/Morto)</label>
+                        <input type="text" onkeyup="filterChars(this.value)" placeholder="Filtrar..."
+                            class="bg-gray-700 text-xs px-3 py-1 rounded-full outline-none w-40">
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 bg-gray-900 p-4 rounded-lg max-h-56 overflow-y-auto custom-scroll"
+                        id="charGrid"></div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                    <button type="button" onclick="saveGame()"
+                        class="flex-[2] bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded uppercase tracking-widest shadow-lg">Salvar
+                        Sessão</button>
+                    <button type="button" onclick="clearFullForm()"
+                        class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 rounded uppercase text-xs">Limpar</button>
+                    <button type="button" onclick="toggleModal(false)"
+                        class="flex-1 border border-gray-600 text-gray-400 font-bold py-4 rounded uppercase text-xs">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const sessionsRef = db.collection("sessions");
+    <script>
+        // 1. CONFIGURAÇÃO FIREBASE (COLE SUAS CHAVES AQUI)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_IBBbkq_urNfPKC6IyBkaSSxDbBVdoEc",
+            authDomain: "zombicide-2nd.firebaseapp.com",
+            projectId: "zombicide-2nd",
+            storageBucket: "zombicide-2nd.firebasestorage.app",
+            messagingSenderId: "532827713560",
+            appId: "1:532827713560:web:5053982941ad37e650936d",
+            measurementId: "G-G3WZ85G7BB"
+        };
 
-    // 2. DADOS DO CATALOGO (IGUAL AO ZOMBICIDE 2ND)
-    const missionCatalog = [
-        { id: "M0", nome: "Tutorial - Aprendendo as Regras", dificuldade: "Fácil" },
-        { id: "M1", nome: "Blocos da Cidade", dificuldade: "Fácil" },
-        { id: "M2", nome: "Zona Y", dificuldade: "Fácil" },
-        { id: "M3", nome: "A Corrida de 24h de Zombicity", dificuldade: "Médio" },
-        { id: "M4", nome: "Tiroteio ao Passar", dificuldade: "Médio" },
-        { id: "M5", nome: "O W Grande", dificuldade: "Médio" },
-        { id: "M6", nome: "A Fuga", dificuldade: "Difícil" },
-        { id: "M7", nome: "Grindhouse", dificuldade: "Médio" },
-        { id: "M8", nome: "Polícia Zumbi", dificuldade: "Difícil" },
-        { id: "M9", nome: "O Poder faz o Direito", dificuldade: "Médio" },
-        { id: "M10", nome: "Cidade Pequena", dificuldade: "Médio" },
-        { id: "M11", nome: "Avenidas Infestadas", dificuldade: "Médio" },
-        { id: "M12", nome: "Rodízio", dificuldade: "Médio" },
-        { id: "M13", nome: "Jericó", dificuldade: "Difícil" },
-        { id: "M14", nome: "Perdidos", dificuldade: "Fácil" },
-        { id: "M15", nome: "Confronto", dificuldade: "Médio" },
-        { id: "M16", nome: "Fazendo a Faxina", dificuldade: "Médio" },
-        { id: "M17", nome: "Fórmula da Mamãe", dificuldade: "Médio" },
-        { id: "M18", nome: "O Cruzamento da Lembrança", dificuldade: "Médio" },
-        { id: "M19", nome: "Ponto de Ônibus", dificuldade: "Médio" },
-        { id: "M20", nome: "Toque de Despertar", dificuldade: "Médio" },
-        { id: "M21", nome: "O Plano de Ned", dificuldade: "Difícil" },
-        { id: "M22", nome: "Prisão Secreta", dificuldade: "Médio" },
-        { id: "M23", nome: "Atalho", dificuldade: "Médio" },
-        { id: "M24", nome: "Corrida Seca", dificuldade: "Médio" },
-        { id: "M25", nome: "Ned’s Moloturbo", dificuldade: "Difícil" }
-    ];
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
 
-    const survivors = ["Ostara", "Lili", "Tiger Sam", "Odin", "Bunny G", "Lou", "Josh", "Doug", "Elie", "Amy", "Ned", "Wanda"].sort();
+        // Função para validar a Master Key no Firestore
+        async function validateMasterKey() {
+            const input = document.getElementById('master-key-input').value;
+            const errorEl = document.getElementById('auth-error');
 
-    let gameData = [];
-    let currentTags = [];
-    let selectedSurvivors = {};
-    let editID = null;
-    let sortDir = 1;
+            try {
+                // Busca a chave no documento 'security' da coleção 'config'
+                const doc = await db.collection('config').doc('security').get();
 
-    // 3. SINCRONIZAÇÃO EM TEMPO REAL COM FIREBASE
-    window.onload = () => {
-        document.getElementById('missionsList').innerHTML = missionCatalog.map(m => `<option value="${m.id}: ${m.nome}">`).join('');
-        renderCharGrid();
-        setupTagSystem();
+                if (!doc.exists) {
+                    showError("Erro: Configuração de segurança não encontrada no Firebase.");
+                    return;
+                }
 
-        sessionsRef.orderBy("createdAt", "desc").onSnapshot((snapshot) => {
-            gameData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderTable();
-        });
-    };
+                const validKey = doc.data().masterKey;
 
-    // 4. FUNÇÕES DE RENDER (EXATAMENTE IGUAIS AO ORIGINAL)
-    function renderCharGrid() {
-        const grid = document.getElementById('charGrid');
-        grid.innerHTML = survivors.map(s => {
-            const status = selectedSurvivors[s] || null;
-            const isSelected = !!status;
-            return `
+                if (input === validKey) {
+                    document.getElementById('step-key').classList.add('hidden');
+                    document.getElementById('step-google').classList.remove('hidden');
+                    errorEl.classList.add('hidden');
+                } else {
+                    showError("Chave Mestra Inválida!");
+                }
+            } catch (e) {
+                console.error(e);
+                showError("Erro ao conectar ao banco de dados.");
+            }
+        }
+
+        // Função para Login Google + Verificação de Whitelist
+        async function loginWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                const result = await auth.signInWithPopup(provider);
+                const userEmail = result.user.email;
+
+                // Verifica se o e-mail existe na coleção 'whitelist'
+                const whiteDoc = await db.collection('whitelist').doc(userEmail).get();
+
+                if (whiteDoc.exists) {
+                    unlockGame();
+                } else {
+                    await auth.signOut();
+                    showError("Acesso Negado: Seu e-mail não está na Whitelist.");
+                }
+            } catch (e) {
+                showError("Falha na autenticação do Google.");
+            }
+        }
+
+        // Função que revela o jogo
+        function unlockGame() {
+            document.getElementById('auth-overlay').style.display = 'none';
+            document.getElementById('game-content').classList.remove('invisible');
+            // Chama a função que carrega os dados originais
+            startApp();
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('auth-error');
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+
+        const sessionsRef = db.collection("sessions");
+
+        // 2. DADOS DO CATALOGO (IGUAL AO ZOMBICIDE 2ND)
+        const missionCatalog = [
+            { id: "M0", nome: "Tutorial - Aprendendo as Regras", dificuldade: "Fácil" },
+            { id: "M1", nome: "Blocos da Cidade", dificuldade: "Fácil" },
+            { id: "M2", nome: "Zona Y", dificuldade: "Fácil" },
+            { id: "M3", nome: "A Corrida de 24h de Zombicity", dificuldade: "Médio" },
+            { id: "M4", nome: "Tiroteio ao Passar", dificuldade: "Médio" },
+            { id: "M5", nome: "O W Grande", dificuldade: "Médio" },
+            { id: "M6", nome: "A Fuga", dificuldade: "Difícil" },
+            { id: "M7", nome: "Grindhouse", dificuldade: "Médio" },
+            { id: "M8", nome: "Polícia Zumbi", dificuldade: "Difícil" },
+            { id: "M9", nome: "O Poder faz o Direito", dificuldade: "Médio" },
+            { id: "M10", nome: "Cidade Pequena", dificuldade: "Médio" },
+            { id: "M11", nome: "Avenidas Infestadas", dificuldade: "Médio" },
+            { id: "M12", nome: "Rodízio", dificuldade: "Médio" },
+            { id: "M13", nome: "Jericó", dificuldade: "Difícil" },
+            { id: "M14", nome: "Perdidos", dificuldade: "Fácil" },
+            { id: "M15", nome: "Confronto", dificuldade: "Médio" },
+            { id: "M16", nome: "Fazendo a Faxina", dificuldade: "Médio" },
+            { id: "M17", nome: "Fórmula da Mamãe", dificuldade: "Médio" },
+            { id: "M18", nome: "O Cruzamento da Lembrança", dificuldade: "Médio" },
+            { id: "M19", nome: "Ponto de Ônibus", dificuldade: "Médio" },
+            { id: "M20", nome: "Toque de Despertar", dificuldade: "Médio" },
+            { id: "M21", nome: "O Plano de Ned", dificuldade: "Difícil" },
+            { id: "M22", nome: "Prisão Secreta", dificuldade: "Médio" },
+            { id: "M23", nome: "Atalho", dificuldade: "Médio" },
+            { id: "M24", nome: "Corrida Seca", dificuldade: "Médio" },
+            { id: "M25", nome: "Ned’s Moloturbo", dificuldade: "Difícil" }
+        ];
+
+        const survivors = ["Ostara", "Lili", "Tiger Sam", "Odin", "Bunny G", "Lou", "Josh", "Doug", "Elie", "Amy", "Ned", "Wanda"].sort();
+
+        let gameData = [];
+        let currentTags = [];
+        let selectedSurvivors = {};
+        let editID = null;
+        let sortDir = 1;
+
+        // 3. SINCRONIZAÇÃO EM TEMPO REAL COM FIREBASE
+        function startApp() {
+            document.getElementById('missionsList').innerHTML = missionCatalog.map(m => `<option value="${m.id}: ${m.nome}">`).join('');
+            renderCharGrid();
+            setupTagSystem();
+
+            sessionsRef.orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+                gameData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTable();
+            });
+        };
+
+        // 4. FUNÇÕES DE RENDER (EXATAMENTE IGUAIS AO ORIGINAL)
+        function renderCharGrid() {
+            const grid = document.getElementById('charGrid');
+            grid.innerHTML = survivors.map(s => {
+                const status = selectedSurvivors[s] || null;
+                const isSelected = !!status;
+                return `
                 <div onclick="toggleSurvivor('${s}')" class="char-item-card p-2 rounded border border-gray-700 bg-gray-800 cursor-pointer text-center transition-all ${isSelected ? 'char-card-selected' : ''}" data-name="${s.toLowerCase()}">
                     <p class="text-[10px] font-bold uppercase truncate mb-1">${s}</p>
                     ${isSelected ? `<button type="button" onclick="event.stopPropagation(); cycleStatus('${s}')" class="text-[9px] px-2 py-0.5 rounded-full font-black uppercase ${status === 'alive' ? 'bg-cyan-600 text-white' : 'bg-red-800 text-white'}">${status === 'alive' ? 'Vivo' : 'Morto'}</button>` : `<span class="text-[9px] text-gray-600 uppercase">OFF</span>`}
                 </div>`;
-        }).join('');
-    }
+            }).join('');
+        }
 
-    function renderTable(data = gameData) {
-        const tbody = document.getElementById('leaderboardBody');
-        tbody.innerHTML = data.map((g) => {
-            const diffSlug = g.difficulty.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            return `
+        function renderTable(data = gameData) {
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = data.map((g) => {
+                const diffSlug = g.difficulty.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return `
             <tr class="hover:bg-gray-800 transition-colors">
                 <td class="p-4"><div class="w-3 h-3 rounded-full ${g.status === 'win' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'}"></div></td>
                 <td class="p-4 font-bold text-xs uppercase">${g.mission}</td>
@@ -282,100 +522,98 @@ const firebaseConfig = {
                     <button onclick="deleteEntry('${g.id}')" class="bg-gray-700 hover:bg-red-600 p-2 rounded">🗑️</button>
                 </td>
             </tr>`;
-        }).join('');
-        updateDashboard();
-        updateTagSuggestions();
-    }
-
-    // 5. LÓGICA DE SALVAMENTO (INTEGRADA AO FIREBASE)
-    async function saveGame() {
-        const missionVal = document.getElementById('missionInput').value;
-        const team = Object.entries(selectedSurvivors).map(([name, status]) => ({ name, status }));
-        if (!missionVal || team.length === 0) return alert("Missão e Time são obrigatórios!");
-
-        const missionID = missionVal.split(':')[0].trim();
-        const catalogEntry = missionCatalog.find(m => m.id === missionID);
-        
-        const entry = {
-            status: document.querySelector('input[name="result"]:checked').value,
-            mission: missionVal,
-            difficulty: catalogEntry ? catalogEntry.dificuldade : "Médio",
-            players: [...currentTags],
-            turns: parseInt(document.getElementById('turnsInput').value) || 0,
-            time: document.getElementById('timeInput').value || "00:00",
-            team: team,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        if (editID) {
-            await sessionsRef.doc(editID).update(entry);
-            editID = null;
-        } else {
-            await sessionsRef.add(entry);
+            }).join('');
+            updateDashboard();
+            updateTagSuggestions();
         }
 
-        toggleModal(false);
-    }
+        // 5. LÓGICA DE SALVAMENTO (INTEGRADA AO FIREBASE)
+        async function saveGame() {
+            const missionVal = document.getElementById('missionInput').value;
+            const team = Object.entries(selectedSurvivors).map(([name, status]) => ({ name, status }));
+            if (!missionVal || team.length === 0) return alert("Missão e Time são obrigatórios!");
 
-    async function deleteEntry(id) {
-        if(confirm("Remover registro da nuvem?")) {
-            await sessionsRef.doc(id).delete();
+            const missionID = missionVal.split(':')[0].trim();
+            const catalogEntry = missionCatalog.find(m => m.id === missionID);
+
+            const entry = {
+                status: document.querySelector('input[name="result"]:checked').value,
+                mission: missionVal,
+                difficulty: catalogEntry ? catalogEntry.dificuldade : "Médio",
+                players: [...currentTags],
+                turns: parseInt(document.getElementById('turnsInput').value) || 0,
+                time: document.getElementById('timeInput').value || "00:00",
+                team: team,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (editID) {
+                await sessionsRef.doc(editID).update(entry);
+                editID = null;
+            } else {
+                await sessionsRef.add(entry);
+            }
+
+            toggleModal(false);
         }
-    }
 
-    function editGame(id) {
-        const g = gameData.find(item => item.id === id);
-        editID = id;
-        document.getElementById('missionInput').value = g.mission;
-        document.getElementById('turnsInput').value = g.turns;
-        document.getElementById('timeInput').value = g.time;
-        document.querySelector(`input[name="result"][value="${g.status}"]`).checked = true;
-        currentTags = [...g.players]; renderTags();
-        selectedSurvivors = {};
-        g.team.forEach(s => selectedSurvivors[s.name] = s.status);
-        renderCharGrid();
-        toggleModal(true);
-    }
+        async function deleteEntry(id) {
+            if (confirm("Remover registro da nuvem?")) {
+                await sessionsRef.doc(id).delete();
+            }
+        }
 
-    // 6. FUNÇÕES AUXILIARES (EXATAMENTE IGUAIS)
-    function toggleSurvivor(name) { if (selectedSurvivors[name]) delete selectedSurvivors[name]; else selectedSurvivors[name] = "alive"; renderCharGrid(); }
-    function cycleStatus(name) { selectedSurvivors[name] = selectedSurvivors[name] === "alive" ? "dead" : "alive"; renderCharGrid(); }
-    function updateDashboard() {
-        const totalDead = gameData.reduce((acc, curr) => acc + curr.team.filter(s => s.status === 'dead').length, 0);
-        document.getElementById('winCount').innerText = gameData.filter(g => g.status === 'win').length;
-        document.getElementById('lossCount').innerText = gameData.filter(g => g.status === 'loss').length;
-        document.getElementById('deadCount').innerText = totalDead;
-        document.getElementById('totalCount').innerText = gameData.length;
-    }
-    function setupTagSystem() {
-        const input = document.getElementById('playerInput');
-        input.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); const val = input.value.trim(); if (val && !currentTags.includes(val)) { currentTags.push(val); renderTags(); } input.value = ''; } });
-    }
-    function renderTags() { document.getElementById('activeTags').innerHTML = currentTags.map((t, i) => `<div class="tag-chip">${t} <span class="tag-remove" onclick="removeTag(${i})">&times;</span></div>`).join(''); }
-    function removeTag(i) { currentTags.splice(i, 1); renderTags(); }
-    function toggleModal(show) { document.getElementById('modal').classList.toggle('hidden', !show); if(!show) clearFullForm(); }
-    function openNewRecord() { editID = null; toggleModal(true); }
-    function clearFullForm() { document.getElementById('gameForm').reset(); currentTags = []; selectedSurvivors = {}; renderTags(); renderCharGrid(); }
-    function handleSort(key) {
-        sortDir *= -1;
-        const diffOrder = { "Fácil": 1, "Médio": 2, "Difícil": 3 };
-        gameData.sort((a, b) => {
-            if (key === 'difficulty') return sortDir * (diffOrder[a[key]] - diffOrder[b[key]]);
-            return typeof a[key] === 'string' ? sortDir * a[key].localeCompare(b[key]) : sortDir * (a[key] - b[key]);
-        });
-        renderTable();
-    }
-    function filterByMission(q) { renderTable(gameData.filter(g => g.mission.toLowerCase().includes(q.toLowerCase()))); }
-    function filterByDifficulty(d) { d ? renderTable(gameData.filter(g => g.difficulty === d)) : renderTable(); }
-    function filterByStatus(s) { renderTable(gameData.filter(g => g.status === s)); }
-    function filterChars(q) { document.querySelectorAll('.char-item-card').forEach(card => { card.style.display = card.dataset.name.includes(q.toLowerCase()) ? "block" : "none"; }); }
-    async function dangerReset() { if(confirm("⚠️ APAGAR TUDO NA NUVEM?") && confirm("Não há volta! Confirma?")) { const batch = db.batch(); gameData.forEach(doc => batch.delete(sessionsRef.doc(doc.id))); await batch.commit(); } }
-    function updateTagSuggestions() { const unique = [...new Set(gameData.flatMap(g => g.players))]; document.getElementById('suggestedPlayers').innerHTML = unique.map(p => `<option value="${p}">`).join(''); }
-    function exportToJSON() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(gameData, null, 2)], {type: 'application/json'})); a.download = 'zombicide_cloud_backup.json'; a.click(); }
-    function exportToCSV() { const headers = "Status,Missao,Dificuldade,Turnos,Duracao,Mortos,Jogadores\n"; const csv = gameData.map(g => `${g.status},"${g.mission}","${g.difficulty}",${g.turns},${g.time},${g.team.filter(s=>s.status==='dead').length},"${g.players.join(';')}"`).join("\n"); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([headers + csv], {type: 'text/csv'})); a.download = 'zombicide_cloud_logs.csv'; a.click(); }
-</script>
+        function editGame(id) {
+            const g = gameData.find(item => item.id === id);
+            editID = id;
+            document.getElementById('missionInput').value = g.mission;
+            document.getElementById('turnsInput').value = g.turns;
+            document.getElementById('timeInput').value = g.time;
+            document.querySelector(`input[name="result"][value="${g.status}"]`).checked = true;
+            currentTags = [...g.players]; renderTags();
+            selectedSurvivors = {};
+            g.team.forEach(s => selectedSurvivors[s.name] = s.status);
+            renderCharGrid();
+            toggleModal(true);
+        }
+
+        // 6. FUNÇÕES AUXILIARES (EXATAMENTE IGUAIS)
+        function toggleSurvivor(name) { if (selectedSurvivors[name]) delete selectedSurvivors[name]; else selectedSurvivors[name] = "alive"; renderCharGrid(); }
+        function cycleStatus(name) { selectedSurvivors[name] = selectedSurvivors[name] === "alive" ? "dead" : "alive"; renderCharGrid(); }
+        function updateDashboard() {
+            const totalDead = gameData.reduce((acc, curr) => acc + curr.team.filter(s => s.status === 'dead').length, 0);
+            document.getElementById('winCount').innerText = gameData.filter(g => g.status === 'win').length;
+            document.getElementById('lossCount').innerText = gameData.filter(g => g.status === 'loss').length;
+            document.getElementById('deadCount').innerText = totalDead;
+            document.getElementById('totalCount').innerText = gameData.length;
+        }
+        function setupTagSystem() {
+            const input = document.getElementById('playerInput');
+            input.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); const val = input.value.trim(); if (val && !currentTags.includes(val)) { currentTags.push(val); renderTags(); } input.value = ''; } });
+        }
+        function renderTags() { document.getElementById('activeTags').innerHTML = currentTags.map((t, i) => `<div class="tag-chip">${t} <span class="tag-remove" onclick="removeTag(${i})">&times;</span></div>`).join(''); }
+        function removeTag(i) { currentTags.splice(i, 1); renderTags(); }
+        function toggleModal(show) { document.getElementById('modal').classList.toggle('hidden', !show); if (!show) clearFullForm(); }
+        function openNewRecord() { editID = null; toggleModal(true); }
+        function clearFullForm() { document.getElementById('gameForm').reset(); currentTags = []; selectedSurvivors = {}; renderTags(); renderCharGrid(); }
+        function handleSort(key) {
+            sortDir *= -1;
+            const diffOrder = { "Fácil": 1, "Médio": 2, "Difícil": 3 };
+            gameData.sort((a, b) => {
+                if (key === 'difficulty') return sortDir * (diffOrder[a[key]] - diffOrder[b[key]]);
+                return typeof a[key] === 'string' ? sortDir * a[key].localeCompare(b[key]) : sortDir * (a[key] - b[key]);
+            });
+            renderTable();
+        }
+        function filterByMission(q) { renderTable(gameData.filter(g => g.mission.toLowerCase().includes(q.toLowerCase()))); }
+        function filterByDifficulty(d) { d ? renderTable(gameData.filter(g => g.difficulty === d)) : renderTable(); }
+        function filterByStatus(s) { renderTable(gameData.filter(g => g.status === s)); }
+        function filterChars(q) { document.querySelectorAll('.char-item-card').forEach(card => { card.style.display = card.dataset.name.includes(q.toLowerCase()) ? "block" : "none"; }); }
+        async function dangerReset() { if (confirm("⚠️ APAGAR TUDO NA NUVEM?") && confirm("Não há volta! Confirma?")) { const batch = db.batch(); gameData.forEach(doc => batch.delete(sessionsRef.doc(doc.id))); await batch.commit(); } }
+        function updateTagSuggestions() { const unique = [...new Set(gameData.flatMap(g => g.players))]; document.getElementById('suggestedPlayers').innerHTML = unique.map(p => `<option value="${p}">`).join(''); }
+        function exportToJSON() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(gameData, null, 2)], { type: 'application/json' })); a.download = 'zombicide_cloud_backup.json'; a.click(); }
+        function exportToCSV() { const headers = "Status,Missao,Dificuldade,Turnos,Duracao,Mortos,Jogadores\n"; const csv = gameData.map(g => `${g.status},"${g.mission}","${g.difficulty}",${g.turns},${g.time},${g.team.filter(s => s.status === 'dead').length},"${g.players.join(';')}"`).join("\n"); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([headers + csv], { type: 'text/csv' })); a.download = 'zombicide_cloud_logs.csv'; a.click(); }
+    </script>
 </body>
 
 </html>
-
-
