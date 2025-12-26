@@ -235,6 +235,11 @@
                         <p class="text-[9px] uppercase font-bold text-red-400 mb-1 italic">Mortes Totais</p>
                         <p class="text-2xl font-black text-red-600" id="deadCount">0</p>
                     </div>
+                    <div class="h-8 w-[1px] bg-gray-700"></div>
+                    <div class="text-center">
+                        <p class="text-[9px] uppercase font-bold text-yellow-600 mb-1 italic">Tempo Total de Jogo</p>
+                        <p class="text-2xl font-black text-[#eab308]" id="totalTimeCount">0h:00m</p>
+                    </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <button onclick="exportToJSON()"
@@ -631,10 +636,25 @@
         function cycleStatus(name) { selectedSurvivors[name] = selectedSurvivors[name] === "alive" ? "dead" : "alive"; renderCharGrid(); }
         function updateDashboard() {
             const totalDead = gameData.reduce((acc, curr) => acc + curr.team.filter(s => s.status === 'dead').length, 0);
+
+            // Cálculo do Tempo Total
+            let totalMinutes = 0;
+            gameData.forEach(g => {
+                if (g.time) {
+                    const [hrs, mins] = g.time.split(':').map(Number);
+                    totalMinutes += (hrs * 60) + mins;
+                }
+            });
+
+            const finalHrs = Math.floor(totalMinutes / 60);
+            const finalMins = totalMinutes % 60;
+            const timeString = `${finalHrs}h ${finalMins.toString().padStart(2, '0')}m`;
+
             document.getElementById('winCount').innerText = gameData.filter(g => g.status === 'win').length;
             document.getElementById('lossCount').innerText = gameData.filter(g => g.status === 'loss').length;
             document.getElementById('deadCount').innerText = totalDead;
             document.getElementById('totalCount').innerText = gameData.length;
+            document.getElementById('totalTimeCount').innerText = timeString; // Atualiza o novo contador
         }
         function setupTagSystem() {
             const input = document.getElementById('playerInput');
