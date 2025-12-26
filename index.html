@@ -503,22 +503,47 @@
         }
 
         // Verifica automaticamente se o usuário já está logado ao abrir a página
-        auth.onAuthStateChanged(async (user) => {
-            const isAwaiting = localStorage.getItem('awaiting_google');
-
-            if (user) {
-                // Se o usuário existe, limpa o sinalizador e verifica a whitelist
-                localStorage.removeItem('awaiting_google');
-                checkWhitelist(user.email);
-            } else if (isAwaiting) {
-                // Se não tem usuário mas o navegador avisa que estamos voltando do Google
-                // Esconde a chave mestra para evitar confusão no Android
-                document.getElementById('step-key').classList.add('hidden');
-                showError("Identificando sobrevivente...");
-            } else {
-                console.log("Nenhum usuário logado. Aguardando Master Key.");
+        // Função que roda assim que o Firebase termina de carregar
+        async function initAuth() {
+            // 1. Tenta capturar o resultado do redirecionamento do Google (essencial para Mobile)
+            try {
+                const result = await auth.getRedirectResult();
+                if (result.user) {
+                    localStorage.removeItem('awaiting_google');
+                    checkWhitelist(result.user.email);
+                    return; // Se logou por aqui, não precisa seguir para o onAuthStateChanged agora
+                }
+            } catch (e) {
+                console.error("Erro no retorno do Google:", e);
+                showError("Falha ao processar login do Google.");
             }
-        });
+
+            // 2. O "Vigia" padrão para sessões já existentes
+            auth.onAuthStateChanged(async (user) => {
+                const isAwaiting = localStorage.getItem('awaiting_google');
+
+                if (user) {
+                    localStorage.removeItem('awaiting_google');
+                    checkWhitelist(user.email);
+                } else if (isAwaiting) {
+                    // Se ainda está travado aqui, vamos dar um tempo para o Firebase "acordar"
+                    // Se demorar mais de 5 segundos, devolvemos para a tela de Master Key
+                    setTimeout(() => {
+                        if (!auth.currentUser) {
+                            localStorage.removeItem('awaiting_google');
+                            document.getElementById('step-key').classList.remove('hidden');
+                            showError("Tempo esgotado. Tente a Master Key novamente.");
+                        }
+                    }, 5000);
+                } else {
+                    // Caso normal: ninguém logado, mostra a Master Key
+                    document.getElementById('step-key').classList.remove('hidden');
+                }
+            });
+        }
+
+        // Chame a função de inicialização
+        initAuth();
 
         const sessionsRef = db.collection("sessions");
 
