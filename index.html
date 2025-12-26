@@ -135,6 +135,7 @@
             align-items: center;
             justify-content: center;
             backdrop-blur: 10px;
+            transition: opacity 0.3s ease;
         }
 
         .auth-card {
@@ -452,6 +453,7 @@
             try {
                 if (isMobile) {
                     // No mobile, usamos REDIRECT para evitar bloqueios de pop-up
+                    localStorage.setItem('awaiting_google', 'true');
                     await auth.signInWithRedirect(provider);
                 } else {
                     // No desktop, o POPUP continua sendo mais rápido e prático
@@ -502,21 +504,17 @@
 
         // Verifica automaticamente se o usuário já está logado ao abrir a página
         auth.onAuthStateChanged(async (user) => {
+            const isAwaiting = localStorage.getItem('awaiting_google');
+
             if (user) {
-                // Se existe um usuário logado, verifica a Whitelist
-                const userEmail = user.email;
-                try {
-                    const whiteDoc = await db.collection('whitelist').doc(userEmail).get();
-                    if (whiteDoc.exists) {
-                        console.log("Sessão ativa encontrada para:", userEmail);
-                        unlockGame();
-                    } else {
-                        // Se por algum motivo ele logou mas saiu da whitelist, desloga
-                        auth.signOut();
-                    }
-                } catch (e) {
-                    console.error("Erro ao verificar persistência:", e);
-                }
+                // Se o usuário existe, limpa o sinalizador e verifica a whitelist
+                localStorage.removeItem('awaiting_google');
+                checkWhitelist(user.email);
+            } else if (isAwaiting) {
+                // Se não tem usuário mas o navegador avisa que estamos voltando do Google
+                // Esconde a chave mestra para evitar confusão no Android
+                document.getElementById('step-key').classList.add('hidden');
+                showError("Identificando sobrevivente...");
             } else {
                 console.log("Nenhum usuário logado. Aguardando Master Key.");
             }
