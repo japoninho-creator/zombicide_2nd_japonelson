@@ -507,48 +507,49 @@
 
         async function initAuth() {
             const isAwaiting = localStorage.getItem('awaiting_google');
-
-            // 1. Se estamos voltando do Google, trava a tela no "Loading" imediatamente
             if (isAwaiting) {
                 document.getElementById('step-key').classList.add('hidden');
                 showError("Identificando sobrevivente...");
             }
 
-            // 2. Função de checagem persistente
-            let attempts = 0;
-            const maxAttempts = 10; // Tenta por até 5 segundos (10x 500ms)
+            try {
+                // FORÇA O FIREBASE A DEFINIR A PERSISTÊNCIA COMO 'LOCAL' (NÃO APAGA AO RECARREGAR)
+                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-            const checkFirebaseState = setInterval(async () => {
-                attempts++;
+                // TENTA CAPTURAR O RESULTADO DO REDIRECIONAMENTO
+                const result = await auth.getRedirectResult();
 
-                // Tenta pegar o usuário atual ou o resultado do redirect
-                const user = auth.currentUser;
-                const redirectResult = await auth.getRedirectResult().catch(() => null);
-
-                if (user || (redirectResult && redirectResult.user)) {
-                    clearInterval(checkFirebaseState);
-                    const finalUser = user || redirectResult.user;
-                    console.log("Usuário autenticado:", finalUser.email);
+                if (result && result.user) {
                     localStorage.removeItem('awaiting_google');
-                    checkWhitelist(finalUser.email);
+                    checkWhitelist(result.user.email);
                     return;
                 }
+            } catch (e) {
+                console.error("Erro no Auth:", e);
+                // Se o erro for de domínio não autorizado, ele aparecerá no console aqui
+            }
 
-                // Se exceder o tempo, volta para a Master Key
-                if (attempts >= maxAttempts) {
-                    clearInterval(checkFirebaseState);
+            // VIGIA DE ESTADO COM LOOP DE TENTATIVA MAIS LONGO
+            let attempts = 0;
+            const checkState = setInterval(() => {
+                attempts++;
+                if (auth.currentUser) {
+                    clearInterval(checkState);
+                    localStorage.removeItem('awaiting_google');
+                    checkWhitelist(auth.currentUser.email);
+                } else if (attempts > 20) { // 10 segundos de espera
+                    clearInterval(checkState);
                     if (localStorage.getItem('awaiting_google')) {
                         localStorage.removeItem('awaiting_google');
                         document.getElementById('step-key').classList.remove('hidden');
-                        showError("Sessão demorou a responder. Use a Master Key.");
+                        showError("Tempo esgotado. Verifique se os cookies estão ativos.");
                     }
                 }
-            }, 500); // Checa a cada meio segundo
+            }, 500);
 
-            // 3. O Vigia de estado padrão (onAuthStateChanged) continua ativo como backup
             auth.onAuthStateChanged((user) => {
                 if (user) {
-                    clearInterval(checkFirebaseState);
+                    clearInterval(checkState);
                     localStorage.removeItem('awaiting_google');
                     checkWhitelist(user.email);
                 } else if (!localStorage.getItem('awaiting_google')) {
