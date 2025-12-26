@@ -146,6 +146,18 @@
             max-width: 450px;
             box-shadow: 0 0 50px rgba(239, 68, 68, 0.2);
         }
+
+        /* Efeito de sombra suave para indicar que há mais conteúdo à direita */
+        .overflow-x-auto {
+            background: linear-gradient(to right, #111827 30%, rgba(17, 24, 39, 0)),
+                linear-gradient(to right, rgba(17, 24, 39, 0), #111827 70%) 0 100%,
+                radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)),
+                radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)) 0 100%;
+            background-repeat: no-repeat;
+            background-color: transparent;
+            background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+            background-attachment: local, local, scroll, scroll;
+        }
     </style>
 </head>
 
