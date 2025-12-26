@@ -214,6 +214,17 @@
                             <span>Sair / Trocar Conta</span>
                         </button>
                     </div>
+                    <div id="admin-area" class="mt-4 p-4 border-t border-gray-700 hidden">
+                        <h3 class="text-sm font-bold text-gray-400 mb-2 uppercase">Recrutar Sobrevivente</h3>
+                        <div class="flex gap-2">
+                            <input type="email" id="new-whitelist-email" placeholder="email@exemplo.com"
+                                class="flex-1 p-2 bg-gray-800 border border-gray-600 rounded text-white text-sm">
+                            <button onclick="addToWhitelist()"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm transition">
+                                Autorizar
+                            </button>
+                        </div>
+                    </div>
                     <p class="text-[10px] text-gray-500 font-mono tracking-widest mt-1 uppercase">
                         Relatório em Nuvem (Firebase)
                     </p>
@@ -464,10 +475,14 @@
         }
 
         // Criamos essa função separada para não repetir código
+
         async function checkWhitelist(email) {
             try {
                 const whiteDoc = await db.collection('whitelist').doc(email).get();
                 if (whiteDoc.exists) {
+                    // MOSTRA A ÁREA DE ADICIONAR E-MAILS SÓ PARA QUEM ESTÁ NA WHITELIST
+                    document.getElementById('admin-area').classList.remove('hidden');
+
                     unlockGame();
                 } else {
                     await auth.signOut();
@@ -555,6 +570,8 @@
                 }
             });
         }
+
+
 
         // Chame a função de inicialização
         initAuth();
@@ -761,6 +778,31 @@
         function updateTagSuggestions() { const unique = [...new Set(gameData.flatMap(g => g.players))]; document.getElementById('suggestedPlayers').innerHTML = unique.map(p => `<option value="${p}">`).join(''); }
         function exportToJSON() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(gameData, null, 2)], { type: 'application/json' })); a.download = 'zombicide_cloud_backup.json'; a.click(); }
         function exportToCSV() { const headers = "Status,Missao,Dificuldade,Turnos,Duracao,Mortos,Jogadores\n"; const csv = gameData.map(g => `${g.status},"${g.mission}","${g.difficulty}",${g.turns},${g.time},${g.team.filter(s => s.status === 'dead').length},"${g.players.join(';')}"`).join("\n"); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([headers + csv], { type: 'text/csv' })); a.download = 'zombicide_cloud_logs.csv'; a.click(); }
+        async function addToWhitelist() {
+            const emailInput = document.getElementById('new-whitelist-email');
+            const email = emailInput.value.trim().toLowerCase();
+
+            if (!email || !email.includes('@')) {
+                alert("Por favor, insira um e-mail válido.");
+                return;
+            }
+
+            try {
+                // Assume-se que sua coleção no Firestore se chama 'whitelist'
+                // e que o ID do documento é o próprio e-mail (ou um campo 'email')
+                await db.collection('whitelist').doc(email).set({
+                    addedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    addedBy: auth.currentUser.email,
+                    status: 'active'
+                });
+
+                alert(`E-mail ${email} autorizado com sucesso!`);
+                emailInput.value = ''; // Limpa o campo
+            } catch (error) {
+                console.error("Erro ao adicionar à whitelist:", error);
+                alert("Erro: Você não tem permissão para adicionar usuários.");
+            }
+        }
         window.onload = () => {
             // Pequeno delay de 1s para o motor do Firebase "esquentar" no Android
             setTimeout(() => {
