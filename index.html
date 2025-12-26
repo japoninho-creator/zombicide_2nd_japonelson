@@ -446,24 +446,27 @@
         // Função para Login Google + Verificação de Whitelist
         async function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
+            // Adiciona escopos básicos para garantir que o Google envie os dados
+            provider.addScope('profile');
+            provider.addScope('email');
 
-            // Detecta se é um dispositivo móvel (ajuda na escolha do método)
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
             try {
+                // Força a persistência LOCAL antes de qualquer tentativa de login
+                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
                 if (isMobile) {
-                    // No mobile, usamos REDIRECT para evitar bloqueios de pop-up
                     localStorage.setItem('awaiting_google', 'true');
+                    // O segredo para Mobile: signInWithRedirect PRECISA do provider configurado
                     await auth.signInWithRedirect(provider);
                 } else {
-                    // No desktop, o POPUP continua sendo mais rápido e prático
                     const result = await auth.signInWithPopup(provider);
-                    const userEmail = result.user.email;
-                    checkWhitelist(userEmail);
+                    checkWhitelist(result.user.email);
                 }
             } catch (e) {
                 console.error(e);
-                showError("Falha na autenticação do Google.");
+                showError("Erro ao iniciar login: " + e.code);
             }
         }
 
@@ -507,28 +510,29 @@
 
         async function initAuth() {
             const isAwaiting = localStorage.getItem('awaiting_google');
+
             if (isAwaiting) {
                 document.getElementById('step-key').classList.add('hidden');
                 showError("Identificando sobrevivente...");
             }
 
-            try {
-                // FORÇA O FIREBASE A DEFINIR A PERSISTÊNCIA COMO 'LOCAL' (NÃO APAGA AO RECARREGAR)
-                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-
-                // TENTA CAPTURAR O RESULTADO DO REDIRECIONAMENTO
-                const result = await auth.getRedirectResult();
-
-                if (result && result.user) {
+            // Pequeno atraso de 500ms para o Android "assentar" os cookies de login
+            setTimeout(async () => {
+                try {
+                    const result = await auth.getRedirectResult();
+                    if (result && result.user) {
+                        console.log("Sucesso no Redirect!");
+                        localStorage.removeItem('awaiting_google');
+                        checkWhitelist(result.user.email);
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Erro no RedirectResult:", e);
+                    // Se der erro de credencial, limpa o estado para não travar
                     localStorage.removeItem('awaiting_google');
-                    checkWhitelist(result.user.email);
-                    return;
+                    document.getElementById('step-key').classList.remove('hidden');
                 }
-            } catch (e) {
-                console.error("Erro no Auth:", e);
-                // Isso vai mostrar o código do erro real na tela do celular
-                showError("Erro Real: " + e.code + " - " + e.message);
-            }
+            }, 500);
 
             // VIGIA DE ESTADO COM LOOP DE TENTATIVA MAIS LONGO
             let attempts = 0;
