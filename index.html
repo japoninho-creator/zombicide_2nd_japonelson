@@ -480,16 +480,19 @@
             try {
                 const whiteDoc = await db.collection('whitelist').doc(email).get();
                 if (whiteDoc.exists) {
-                    // MOSTRA A ÁREA DE ADICIONAR E-MAILS SÓ PARA QUEM ESTÁ NA WHITELIST
+                    // Se chegou aqui, o usuário está logado e autorizado
                     document.getElementById('admin-area').classList.remove('hidden');
 
+                    // AGORA SIM liberamos o jogo e carregamos os dados
                     unlockGame();
                 } else {
                     await auth.signOut();
                     showError("Acesso Negado: Seu e-mail não está na Whitelist.");
                 }
             } catch (e) {
-                showError("Erro ao verificar lista de acesso.");
+                // Se cair aqui, pode ser que o login ainda esteja sendo processado
+                console.error("Erro na Whitelist:", e);
+                showError("Validando credenciais de sobrevivente...");
             }
         }
 
